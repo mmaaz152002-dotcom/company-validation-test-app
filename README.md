@@ -40,6 +40,12 @@ environment variable. If the platform does not provide one, it defaults to `8000
 
 This project is an AI-assisted lead qualification workflow that researches a company, evaluates commercial fit, performs compliance screening, and routes the lead to one of three outcomes:
 
+Before research, a basic deterministic gate checks the submitted company name and
+website domain against confirmed competitors. Exact matches are blocked, persisted, and
+notified immediately, so an unavailable competitor website cannot prevent the correct
+do-not-engage decision. Unknown and ambiguous companies continue to website research
+and detailed fuzzy/LLM compliance screening.
+
 * Sales Ready
 * Manual Review
 * Blocked
