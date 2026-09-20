@@ -3,120 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="How the Maaz Lead Validator qualifies and routes inbound leads.">
-  <title>How it works · Maaz Lead Validator</title>
+  <title>Workflow · Maaz Lead Validator</title>
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/readme.css">
 </head>
 <body>
-  <div class="shell docs-shell">
+  <div class="shell workflow-shell">
     <header class="topbar">
-      <a class="brand" href="/">
-        <span class="brand-mark">M</span>
-        <span>Maaz <b>Lead Validator</b></span>
-      </a>
-      <div class="header-actions">
-        <a class="header-link active" href="/readme">How it works</a>
-        <a class="back-link" href="/">Open validator</a>
-      </div>
+      <a class="brand" href="/"><span class="brand-mark">M</span><span>Maaz <b>Lead Validator</b></span></a>
+      <a class="back-link" href="/">Back to validator</a>
     </header>
-
-    <main class="docs-main">
-      <section class="docs-hero">
-        <p class="eyebrow">Product and technical README</p>
-        <h1>Lead qualification &amp;<br>business routing workflow</h1>
-        <p>How inbound leads become researched, scored, screened, and routed sales decisions—with an audit trail at every stage.</p>
-        <div class="hero-outcomes">
-          <span>Faster triage</span><span>Consistent qualification</span><span>Lower manual effort</span><span>Better risk control</span>
-        </div>
+    <main class="workflow-main">
+      <header class="workflow-heading">
+        <p class="eyebrow">How it works</p>
+        <h1>Lead qualification workflow</h1>
+        <p>How a form submission becomes a researched, scored, screened, and routed sales lead.</p>
+      </header>
+      <section class="steps" aria-label="Lead qualification steps">
+        <article class="step-card"><div class="step-number">1</div><div class="step-content">
+          <h2>Lead intake and validation</h2><ul><li>Accepts contact and company information.</li><li>Validates required fields, email syntax, and website format.</li><li>Checks whether the work-email domain matches the company website.</li></ul>
+          <p class="business-impact"><b>Business value:</b> removes invalid or low-quality submissions before sales spends time on them.</p>
+        </div></article>
+        <article class="step-card"><div class="step-number">2</div><div class="step-content">
+          <h2>Company research</h2><ul><li>Normalizes the domain and checks cached research.</li><li>If needed, crawls up to 10 useful pages such as About, Products, Careers, Contact, and Legal.</li><li>Cleans page noise and creates one source-labelled evidence set.</li><li>Returns company size, headquarters, business model, cloud signals, confidence, and sources.</li></ul>
+          <p class="business-impact"><b>Business value:</b> gives sales consistent company context while caching reduces repeat work and LLM usage.</p>
+        </div></article>
+        <article class="step-card"><div class="step-number">3</div><div class="step-content">
+          <h2>Fit scoring</h2><ul><li>Company size contributes up to 35 points.</li><li>Cloud intensity contributes up to 40.</li><li>Business-model relevance contributes up to 15.</li><li>Lead quality contributes up to 10.</li><li>The result is low, borderline, promising, or strong.</li></ul>
+          <p class="business-impact"><b>Business value:</b> creates a transparent priority order so sales can focus on likely cloud-cost opportunities.</p>
+        </div></article>
+        <article class="step-card"><div class="step-number">4</div><div class="step-content">
+          <h2>Compliance screening</h2><ul><li>Normalizes company and competitor names and calculates fuzzy similarity.</li><li>Checks plausible competitor matches and headquarters-related policy risk.</li><li>Returns pass, review, or block with confidence and reasoning.</li></ul>
+          <p class="business-impact"><b>Business value:</b> flags commercial or legal risk before the lead enters the active sales pipeline.</p>
+        </div></article>
+        <article class="step-card"><div class="step-number">5</div><div class="step-content">
+          <h2>Decision routing</h2><div class="routing-rules"><span><b>Blocked</b> Compliance returns block</span><span><b>Manual review</b> Possible match, fit below 50, or non-company email</span><span><b>Sales ready</b> Compliance passes and all qualification gates pass</span></div>
+          <p class="business-impact"><b>Business value:</b> automates routine decisions while keeping a person involved for ambiguous cases.</p>
+        </div></article>
+        <article class="step-card"><div class="step-number">6</div><div class="step-content">
+          <h2>Save, notify, and review</h2><ul><li>Saves the lead, company profile, score, compliance result, and disposition.</li><li>Sends the report to the selected notification email.</li><li>Shows the result in the expandable tracker and supports CSV export.</li><li>Records crawl, model, scoring, compliance, and email events in backend logs.</li></ul>
+          <p class="business-impact"><b>Business value:</b> gives sales an immediate, auditable result they can review and act on.</p>
+        </div></article>
       </section>
-
-      <section class="workflow-section">
-        <div class="section-heading">
-          <div><p class="eyebrow">End-to-end pipeline</p><h2>From form submission to sales action</h2></div>
-          <p>One structured company-research call and one compliance-reasoning call for each newly researched domain.</p>
-        </div>
-        <div class="workflow-grid">
-          <article class="workflow-card">
-            <div class="card-number">01</div><div class="card-icon">IN</div>
-            <h3>Lead intake &amp; validation</h3>
-            <div class="card-block"><h4>What happens</h4><ul><li>Accepts contact and company details</li><li>Validates required fields and email syntax</li><li>Compares work-email and website domains</li><li>Classifies company, free, or mismatched email</li></ul></div>
-            <div class="impact"><b>Business impact</b><p>Stops low-quality submissions early and gives sales cleaner contact data.</p></div>
-          </article>
-          <article class="workflow-card">
-            <div class="card-number">02</div><div class="card-icon">RS</div>
-            <h3>Company research</h3>
-            <div class="card-block"><h4>What happens</h4><ul><li>Normalizes the company domain</li><li>Reuses cached research when available</li><li>Crawls up to 10 useful same-domain pages</li><li>Cleans navigation, scripts, and page noise</li><li>Builds one source-labelled evidence set</li></ul></div>
-            <div class="impact"><b>Business impact</b><p>Produces consistent lead context while reducing repeat work, cost, and response time.</p></div>
-          </article>
-          <article class="workflow-card">
-            <div class="card-number">03</div><div class="card-icon">FS</div>
-            <h3>Fit scoring</h3>
-            <div class="card-block"><h4>100-point model</h4><ul><li>Company size: up to 35</li><li>Cloud intensity: up to 40</li><li>Business model: up to 15</li><li>Lead quality: up to 10</li><li>Every component includes a reason</li></ul></div>
-            <div class="impact"><b>Business impact</b><p>Creates transparent prioritization so sales can focus on likely cloud-cost opportunities.</p></div>
-          </article>
-          <article class="workflow-card">
-            <div class="card-number">04</div><div class="card-icon">CS</div>
-            <h3>Compliance screening</h3>
-            <div class="card-block"><h4>What happens</h4><ul><li>Normalizes competitor names and suffixes</li><li>Calculates fuzzy name similarity</li><li>Reviews headquarters against policy rules</li><li>Returns pass, review, or block</li><li>Includes match, confidence, and reasoning</li></ul></div>
-            <div class="impact"><b>Business impact</b><p>Escalates ambiguous cases and reduces legal or commercial risk before outreach.</p></div>
-          </article>
-          <article class="workflow-card">
-            <div class="card-number">05</div><div class="card-icon">DR</div>
-            <h3>Decision routing</h3>
-            <div class="card-block"><h4>Routing rules</h4><ul><li>Compliance block → Blocked</li><li>Compliance review → Manual review</li><li>Fit below 50 → Manual review</li><li>Free/mismatched email → Manual review</li><li>Otherwise → Sales ready</li></ul></div>
-            <div class="impact"><b>Business impact</b><p>Automates routine decisions while preserving human review where judgment matters.</p></div>
-          </article>
-          <article class="workflow-card">
-            <div class="card-number">06</div><div class="card-icon">OP</div>
-            <h3>Persistence &amp; action</h3>
-            <div class="card-block"><h4>What happens</h4><ul><li>Saves lead, profile, score, and decision</li><li>Sends the report through configured SMTP</li><li>Shows results in the expandable tracker</li><li>Supports email retries and CSV export</li><li>Records structured operational logs</li></ul></div>
-            <div class="impact"><b>Business impact</b><p>Creates an audit trail and gives sales immediate, reusable context for follow-up.</p></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="safeguards-section">
-        <div class="section-heading"><div><p class="eyebrow">Cross-cutting safeguards</p><h2>Reliability built into every stage</h2></div></div>
-        <div class="safeguard-grid">
-          <article><span>01</span><h3>Website safety</h3><p>Blocks localhost, private IP ranges, unsafe protocols, and redirects to internal addresses.</p></article>
-          <article><span>02</span><h3>Structured output</h3><p>Rejects malformed AI responses and validates every research and compliance result with Pydantic.</p></article>
-          <article><span>03</span><h3>Model resilience</h3><p>Retries once, then moves through the environment-configured OpenRouter fallback list.</p></article>
-          <article><span>04</span><h3>Usage control</h3><p>Caches research by normalized domain and targets only two reasoning operations for a new company.</p></article>
-          <article><span>05</span><h3>Auditability</h3><p>Logs crawl stages, model selection, token use, scoring, compliance, persistence, and notification status.</p></article>
-          <article><span>06</span><h3>Secret handling</h3><p>Keeps OpenRouter and SMTP credentials server-side and excludes them from browser responses and logs.</p></article>
-        </div>
-      </section>
-
-      <section class="decision-section">
-        <div class="decision-copy">
-          <p class="eyebrow">Business logic</p><h2>Scoring informs priority.<br>Compliance controls access.</h2>
-          <p>A company can be an excellent commercial fit and still be blocked. The system keeps opportunity scoring separate from risk screening, then combines both into a clear disposition.</p>
-        </div>
-        <div class="decision-table">
-          <div class="decision-row header"><span>Condition</span><span>Route</span></div>
-          <div class="decision-row"><span>Compliance status is block</span><b class="route blocked">Blocked</b></div>
-          <div class="decision-row"><span>Possible compliance match</span><b class="route review">Manual review</b></div>
-          <div class="decision-row"><span>Fit score below 50</span><b class="route review">Manual review</b></div>
-          <div class="decision-row"><span>Email is free or mismatched</span><b class="route review">Manual review</b></div>
-          <div class="decision-row"><span>All gates pass</span><b class="route ready">Sales ready</b></div>
-        </div>
-      </section>
-
-      <section class="implementation-section">
-        <div><p class="eyebrow">Implementation choices</p><h2>Small, explainable, and demo-ready</h2></div>
-        <div class="choice-grid">
-          <article><h3>FastAPI + plain web UI</h3><p>No frontend build pipeline is needed for a focused form and tracker.</p></article>
-          <article><h3>SQLite instead of pgvector</h3><p>The bounded evidence set fits in one prompt; semantic retrieval would add unnecessary infrastructure.</p></article>
-          <article><h3>OpenRouter only</h3><p>One centralized service handles model choice, fallback, retries, validation, and usage logging.</p></article>
-          <article><h3>Deterministic scoring</h3><p>The model extracts facts. Python applies visible rules so scores stay consistent and explainable.</p></article>
-        </div>
-      </section>
-
-      <footer class="docs-footer">
-        <div><b>Ready to process a lead?</b><span>Return to the validator and run the complete workflow.</span></div>
-        <a href="/">Open lead validator</a>
-      </footer>
+      <aside class="safeguards"><h2>Safeguards used throughout</h2><ul><li>Private and local website addresses are blocked.</li><li>AI responses require Pydantic validation.</li><li>OpenRouter models retry and fall back in configured order.</li><li>Research is cached by normalized domain.</li><li>API and SMTP credentials remain server-side.</li></ul></aside>
     </main>
   </div>
 </body>
