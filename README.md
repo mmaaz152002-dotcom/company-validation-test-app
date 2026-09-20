@@ -35,6 +35,9 @@ platform health checks. Mount `/app/data` to preserve SQLite records and `/app/l
 preserve structured logs. Provide secrets through `.env` or the deployment platform;
 never copy `.env` into the image.
 
+On managed platforms, the container automatically listens on the injected `PORT`
+environment variable. If the platform does not provide one, it defaults to `8000`.
+
 This project is an AI-assisted lead qualification workflow that researches a company, evaluates commercial fit, performs compliance screening, and routes the lead to one of three outcomes:
 
 * Sales Ready
