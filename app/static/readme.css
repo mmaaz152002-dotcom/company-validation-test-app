@@ -3,7 +3,7 @@
 .back-link:hover { text-decoration: underline; }
 .workflow-main { padding: 58px 0 80px; }
 .workflow-heading { max-width: 720px; margin-bottom: 42px; }
-.workflow-heading h1 { font-size: clamp(38px, 6vw, 62px); }
+.workflow-heading h1 { font-size: clamp(38px, 6vw, 50px); }
 .workflow-heading > p:last-child { margin: 18px 0 0; color: var(--muted); font-size: 16px; line-height: 1.6; }
 .steps { position: relative; display: grid; gap: 18px; }
 .steps::before { content: ""; position: absolute; top: 30px; bottom: 30px; left: 29px; width: 2px; background: var(--line); }
