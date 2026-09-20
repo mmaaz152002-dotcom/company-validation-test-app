@@ -38,6 +38,11 @@ async def frontend() -> FileResponse:
     return FileResponse("app/static/index.html")
 
 
+@app.get("/health", include_in_schema=False)
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.get("/readme", include_in_schema=False)
 async def readme_page() -> FileResponse:
     return FileResponse("app/static/readme.html")
