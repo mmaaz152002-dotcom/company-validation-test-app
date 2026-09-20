@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI-assisted company research and compliance validation.">
+  <title>Maaz · Lead Validator</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Maaz Lead Validator home">
+        <span class="brand-mark">M</span>
+        <span>Maaz <b>Lead Validator</b></span>
+      </a>
+      <div class="header-actions">
+        <a class="header-link" href="/readme">How it works</a>
+        <span class="service-status"><i></i> OpenRouter connected server-side</span>
+      </div>
+    </header>
+
+    <main>
+
+      <div class="workspace">
+        <section class="panel form-panel">
+          <div class="panel-heading">
+            <span class="step">01</span>
+            <div>
+              <h2>Lead information</h2>
+              <p>Supply the source material the model may use.</p>
+            </div>
+          </div>
+
+          <form id="validator-form">
+            <div class="field-row">
+              <label>
+                <span>Name</span>
+                <input id="name" required minlength="2" autocomplete="name" placeholder="Jane Smith">
+              </label>
+              <label>
+                <span>Work email</span>
+                <input id="email" required type="email" autocomplete="email" placeholder="jane@acme.com">
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span>Company name</span>
+                <input id="company-name-input" required minlength="2" autocomplete="organization" placeholder="Acme Inc">
+              </label>
+              <label>
+                <span>Company website</span>
+                <input id="website" required type="url" autocomplete="url" placeholder="https://acme.com">
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span>Job title <em>optional</em></span>
+                <input id="job-title" autocomplete="organization-title" placeholder="VP of Engineering">
+                <small>Provides sales with buying-role context.</small>
+              </label>
+              <label>
+                <span>Send report to</span>
+                <input id="notification-email" required type="email" autocomplete="email" placeholder="sales@example.com">
+                <small>The completed summary is emailed here.</small>
+              </label>
+            </div>
+
+            <button id="submit-button" type="submit">
+              <span>Research &amp; validate</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <p class="form-note">The submitted website is crawled automatically. Cached domains skip repeat research.</p>
+          </form>
+        </section>
+
+        <aside class="panel result-panel" aria-live="polite">
+          <div class="panel-heading">
+            <span class="step">02</span>
+            <div>
+              <h2>Validation result</h2>
+              <p id="result-subtitle">Your structured report will appear here.</p>
+            </div>
+          </div>
+
+          <div id="empty-state" class="empty-state">
+            <div class="radar"><span></span></div>
+            <h3>Ready to investigate</h3>
+            <p>Complete the lead information and start validation.</p>
+          </div>
+
+          <div id="loading-state" class="loading-state hidden">
+            <div class="scan-line"></div>
+            <p id="loading-copy">Researching company profile…</p>
+            <div class="loading-steps">
+              <span id="research-step" class="active">Research</span>
+              <span id="compliance-step">Compliance</span>
+            </div>
+          </div>
+
+          <div id="error-state" class="error-state hidden">
+            <span>Unable to complete validation</span>
+            <p id="error-copy"></p>
+          </div>
+
+          <div id="results" class="results hidden">
+            <div class="verdict">
+              <span id="status-badge" class="badge"></span>
+              <span id="confidence"></span>
+            </div>
+            <div class="fit-meter" aria-label="Lead fit score"><span id="fit-fill"></span></div>
+            <h3 id="company-name"></h3>
+            <a id="company-domain" target="_blank" rel="noopener noreferrer"></a>
+            <p id="summary" class="summary"></p>
+
+            <dl class="facts">
+              <div><dt>Headquarters</dt><dd id="headquarters"></dd></div>
+              <div><dt>Employees</dt><dd id="employees"></dd></div>
+              <div><dt>Business model</dt><dd id="business-model"></dd></div>
+              <div><dt>Cloud intensity</dt><dd id="cloud-intensity"></dd></div>
+            </dl>
+
+            <div class="reason-box">
+              <span>Compliance reasoning</span>
+              <p id="reason"></p>
+              <p id="match" class="match"></p>
+            </div>
+            <div class="detail-section">
+              <h4>Fit breakdown</h4>
+              <ul id="fit-reasons"></ul>
+            </div>
+
+            <div id="signals-section" class="detail-section">
+              <h4>Cloud signals</h4>
+              <ul id="signals"></ul>
+            </div>
+            <div id="sources-section" class="detail-section">
+              <h4>Sources</h4>
+              <ul id="sources"></ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section class="tracker panel">
+        <div class="tracker-heading">
+          <div>
+            <p class="eyebrow">Sales tracker</p>
+            <h2>Processed leads</h2>
+          </div>
+          <a class="download" href="/api/leads.csv" download>Download CSV</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th class="expand-column"><span class="sr-only">Details</span></th><th>Company</th><th>Contact</th><th>Fit</th><th>Compliance</th><th>Disposition</th><th>Submitted</th></tr></thead>
+            <tbody id="tracker-body"><tr><td colspan="7" class="table-empty">No processed leads yet.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
