@@ -53,6 +53,19 @@
                 <input id="website" required type="url" autocomplete="url" placeholder="https://acme.com">
               </label>
             </div>
+            <div class="phone-row">
+              <label>
+                <span>Phone country</span>
+                <select id="phone-country" aria-describedby="phone-feedback">
+                  <option value="">Auto-detect from + number</option>
+                </select>
+              </label>
+              <label>
+                <span>Phone number</span>
+                <input id="phone-number" required type="tel" autocomplete="tel" placeholder="+36 30 123 4567" aria-describedby="phone-feedback">
+              </label>
+              <p id="phone-feedback" class="field-feedback">Choose a country for a national number, or start with + for automatic detection.</p>
+            </div>
             <div class="field-row">
               <label>
                 <span>Job title <em>optional</em></span>
@@ -91,11 +104,8 @@
 
           <div id="loading-state" class="loading-state hidden">
             <div class="scan-line"></div>
-            <p id="loading-copy">Researching company profile…</p>
-            <div class="loading-steps">
-              <span id="research-step" class="active">Research</span>
-              <span id="compliance-step">Compliance</span>
-            </div>
+            <p id="loading-copy">Starting validation…</p>
+            <ul id="progress-events" class="progress-events"></ul>
           </div>
 
           <div id="error-state" class="error-state hidden">
@@ -121,7 +131,9 @@
             </dl>
 
             <div class="reason-box">
-              <span>Compliance reasoning</span>
+              <span>Why this disposition</span>
+              <ul id="decision-reasons" class="decision-reasons"></ul>
+              <span class="secondary-reason-title">Compliance reasoning</span>
               <p id="reason"></p>
               <p id="match" class="match"></p>
             </div>

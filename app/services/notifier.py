@@ -59,9 +59,14 @@ class EmailNotifier:
         message.set_content(
             f"""New lead: {result.lead.name} <{result.lead.email}>
 Company: {result.profile.company} ({result.profile.domain})
+Phone: {result.lead.phone_number or 'Not provided'}
+Phone country: {result.phone_country or 'Unknown'} ({result.phone_country_risk or 'not assessed'})
 Fit: {result.fit.score}/100 — {result.fit.category}
 Compliance: {result.compliance.status}
 Disposition: {result.disposition.replace('_', ' ')}
+
+Why this disposition:
+{chr(10).join(f'- {reason}' for reason in result.decision_reasons) or '- No decision reason recorded.'}
 
 Summary:
 {result.profile.summary}

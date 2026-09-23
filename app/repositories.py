@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
@@ -32,9 +33,23 @@ class LeadRepository:
                     lead_json TEXT NOT NULL, email_alignment TEXT NOT NULL,
                     profile_json TEXT NOT NULL, fit_json TEXT NOT NULL,
                     compliance_json TEXT NOT NULL, disposition TEXT NOT NULL,
-                    notification_status TEXT NOT NULL
+                    notification_status TEXT NOT NULL,
+                    phone_country TEXT,
+                    phone_country_risk TEXT,
+                    phone_risk_reason TEXT,
+                    decision_reasons_json TEXT NOT NULL DEFAULT '[]'
                 );
             """)
+            columns = {
+                row[1] for row in connection.execute("PRAGMA table_info(leads)").fetchall()
+            }
+            for name in ("phone_country", "phone_country_risk", "phone_risk_reason"):
+                if name not in columns:
+                    connection.execute(f"ALTER TABLE leads ADD COLUMN {name} TEXT")
+            if "decision_reasons_json" not in columns:
+                connection.execute(
+                    "ALTER TABLE leads ADD COLUMN decision_reasons_json TEXT NOT NULL DEFAULT '[]'"
+                )
 
     def get_cached_profile(self, domain: str) -> CompanyProfile | None:
         with self.lock, self._connect() as connection:
@@ -48,15 +63,21 @@ class LeadRepository:
                 (domain, profile.model_dump_json(), evidence, datetime.now(UTC).isoformat()),
             )
 
-    def create(self, lead: LeadSubmission, email_alignment: str, profile: CompanyProfile, fit: FitResult, compliance: ComplianceResult, disposition: str) -> LeadResult:
+    def create(
+        self, lead: LeadSubmission, email_alignment: str, profile: CompanyProfile,
+        fit: FitResult, compliance: ComplianceResult, disposition: str,
+        phone_country: str | None = None, phone_country_risk: str | None = None,
+        phone_risk_reason: str | None = None,
+        decision_reasons: list[str] | None = None,
+    ) -> LeadResult:
         created_at = datetime.now(UTC)
         with self.lock, self._connect() as connection:
             cursor = connection.execute(
-                "INSERT INTO leads(created_at,lead_json,email_alignment,profile_json,fit_json,compliance_json,disposition,notification_status) VALUES(?,?,?,?,?,?,?,?)",
-                (created_at.isoformat(), lead.model_dump_json(), email_alignment, profile.model_dump_json(), fit.model_dump_json(), compliance.model_dump_json(), disposition, "skipped"),
+                "INSERT INTO leads(created_at,lead_json,email_alignment,profile_json,fit_json,compliance_json,disposition,notification_status,phone_country,phone_country_risk,phone_risk_reason,decision_reasons_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                (created_at.isoformat(), lead.model_dump_json(), email_alignment, profile.model_dump_json(), fit.model_dump_json(), compliance.model_dump_json(), disposition, "skipped", phone_country, phone_country_risk, phone_risk_reason, json.dumps(decision_reasons or [])),
             )
             lead_id = int(cursor.lastrowid)
-        return LeadResult(id=lead_id, created_at=created_at, lead=lead, email_alignment=email_alignment, profile=profile, fit=fit, compliance=compliance, disposition=disposition, notification_status="skipped")
+        return LeadResult(id=lead_id, created_at=created_at, lead=lead, email_alignment=email_alignment, profile=profile, fit=fit, compliance=compliance, disposition=disposition, notification_status="skipped", phone_country=phone_country, phone_country_risk=phone_country_risk, phone_risk_reason=phone_risk_reason, decision_reasons=decision_reasons or [])
 
     def update_notification(self, lead_id: int, status: str) -> None:
         with self.lock, self._connect() as connection:
@@ -82,4 +103,8 @@ class LeadRepository:
             fit=FitResult.model_validate_json(row["fit_json"]),
             compliance=ComplianceResult.model_validate_json(row["compliance_json"]),
             disposition=row["disposition"], notification_status=row["notification_status"],
+            phone_country=row["phone_country"],
+            phone_country_risk=row["phone_country_risk"],
+            phone_risk_reason=row["phone_risk_reason"],
+            decision_reasons=json.loads(row["decision_reasons_json"] or "[]"),
         )

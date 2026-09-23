@@ -40,6 +40,14 @@ environment variable. If the platform does not provide one, it defaults to `8000
 
 This project is an AI-assisted lead qualification workflow that researches a company, evaluates commercial fit, performs compliance screening, and routes the lead to one of three outcomes:
 
+Phone numbers may be entered in international `+` format for automatic country
+detection, or as a national number with a selected country. The backend normalizes valid
+numbers to E.164. Invalid or unrecognized numbers stop before research. Country policy is
+configured in `data/country_rules.csv`; competitor names, aliases, and domains are
+configured in `data/competitors.csv`. These files are re-read for each submission, so
+policy edits do not require a restart. The included country rules are sample business
+policy only and are not legal or sanctions advice.
+
 Before research, a basic deterministic gate checks the submitted company name and
 website domain against confirmed competitors. Exact matches are blocked, persisted, and
 notified immediately, so an unavailable competitor website cannot prevent the correct

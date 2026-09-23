@@ -1,6 +1,9 @@
 const form = document.querySelector('#validator-form');
 const submitButton = document.querySelector('#submit-button');
 const email = document.querySelector('#email');
+const phoneNumber = document.querySelector('#phone-number');
+const phoneCountry = document.querySelector('#phone-country');
+const phoneFeedback = document.querySelector('#phone-feedback');
 
 const views = {
   empty: document.querySelector('#empty-state'),
@@ -31,6 +34,13 @@ async function post(url, body) {
   return payload;
 }
 
+async function get(url) {
+  const response = await fetch(url);
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.detail || `Request failed (${response.status})`);
+  return payload;
+}
+
 function text(selector, value, fallback = 'Not available') {
   document.querySelector(selector).textContent = value ?? fallback;
 }
@@ -54,6 +64,13 @@ function render(result) {
   text('#business-model', profile.business_model);
   text('#cloud-intensity', profile.cloud_intensity);
   text('#reason', compliance.reason);
+  const decisionReasons = document.querySelector('#decision-reasons');
+  const routingReasons = result.decision_reasons || [];
+  decisionReasons.replaceChildren(...routingReasons.map(value => {
+    const item = document.createElement('li');
+    item.textContent = value;
+    return item;
+  }));
   const fitReasons = document.querySelector('#fit-reasons');
   fitReasons.replaceChildren(...fit.reasons.map(value => {
     const item = document.createElement('li');
@@ -226,9 +243,19 @@ function buildTrackerDetail(result) {
   decision.append(grid);
   decision.append(element('h4', 'Compliance reasoning'));
   decision.append(element('p', result.compliance.reason));
+  decision.append(element('h4', 'Why this disposition'));
+  decision.append(detailList(
+    (result.decision_reasons || []).length
+      ? result.decision_reasons.map(value => ['', value])
+      : [['', 'No decision reason recorded for this older result.']]
+  ));
   decision.append(element('h4', 'Lead and delivery'));
   decision.append(detailList([
     ['Job title', result.lead.job_title],
+    ['Phone', result.lead.phone_number],
+    ['Phone country', result.phone_country],
+    ['Country risk', result.phone_country_risk],
+    ['Country rule', result.phone_risk_reason],
     ['Email alignment', result.email_alignment.replaceAll('_', ' ')],
     ['Compliance confidence', `${Math.round(result.compliance.confidence * 100)}%`],
     ['Matched rule', result.compliance.matched_rule || result.compliance.possible_match],
@@ -276,25 +303,98 @@ async function loadTracker() {
   }
 }
 
+async function loadPhoneCountries() {
+  try {
+    const countries = await get('/api/policy/countries');
+    const names = new Intl.DisplayNames([navigator.language || 'en'], {type: 'region'});
+    countries
+      .map(country => ({...country, name: names.of(country.country_code) || country.country_code}))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .forEach(country => {
+        const option = document.createElement('option');
+        option.value = country.country_code;
+        option.textContent = `${country.name} (${country.dial_code})${country.risk === 'standard' ? '' : ` — ${country.risk}`}`;
+        phoneCountry.append(option);
+      });
+  } catch (_) {
+    phoneFeedback.textContent = 'Country list could not be loaded. Enter an international number starting with +.';
+    phoneFeedback.className = 'field-feedback invalid';
+  }
+}
+
+async function validatePhone() {
+  phoneFeedback.textContent = 'Checking phone number…';
+  phoneFeedback.className = 'field-feedback';
+  try {
+    const assessment = await post('/api/phone/validate', {
+      phone_number: phoneNumber.value,
+      country_code: phoneCountry.value || null,
+    });
+    phoneCountry.value = assessment.country_code;
+    phoneNumber.value = assessment.e164;
+    phoneFeedback.textContent = `${assessment.country_name} ${assessment.dial_code} · ${assessment.risk} risk policy`;
+    phoneFeedback.className = `field-feedback ${assessment.risk === 'blocked' ? 'invalid' : 'valid'}`;
+    return assessment;
+  } catch (error) {
+    phoneFeedback.textContent = error.message;
+    phoneFeedback.className = 'field-feedback invalid';
+    throw error;
+  }
+}
+
+phoneNumber.addEventListener('blur', () => {
+  if (phoneNumber.value) validatePhone().catch(() => {});
+});
+phoneCountry.addEventListener('change', () => {
+  if (phoneNumber.value) validatePhone().catch(() => {});
+});
+
+function addProgress(message) {
+  const list = document.querySelector('#progress-events');
+  if ([...list.children].some(item => item.textContent === message)) return;
+  const item = document.createElement('li');
+  item.textContent = message;
+  list.append(item);
+  list.scrollTop = list.scrollHeight;
+}
+
+async function waitForRun(runId) {
+  let lastStage = '';
+  for (let attempt = 0; attempt < 600; attempt += 1) {
+    const run = await get(`/api/runs/${runId}`);
+    if (run.stage !== lastStage) {
+      lastStage = run.stage;
+      text('#loading-copy', run.message);
+      addProgress(run.message);
+    }
+    if (run.status === 'completed') return run.result;
+    if (run.status === 'failed') throw new Error(run.message);
+    await new Promise(resolve => setTimeout(resolve, 750));
+  }
+  throw new Error('Validation timed out. Check the backend log for the current stage.');
+}
+
 form.addEventListener('submit', async event => {
   event.preventDefault();
   submitButton.disabled = true;
   show('loading');
-  document.querySelector('#research-step').classList.add('active');
-  document.querySelector('#compliance-step').classList.remove('active');
-  text('#loading-copy', 'Researching company profile…');
+  document.querySelector('#progress-events').replaceChildren();
+  text('#loading-copy', 'Validating phone number…');
 
   try {
-    const result = await post('/api/leads', {
+    const phone = await validatePhone();
+    addProgress(`Phone validated: ${phone.country_name} (${phone.risk} risk policy).`);
+    const run = await post('/api/runs', {
       name: document.querySelector('#name').value,
       email: email.value,
       company_name: document.querySelector('#company-name-input').value,
       website: document.querySelector('#website').value,
       job_title: document.querySelector('#job-title').value || null,
       notification_email: document.querySelector('#notification-email').value,
+      phone_number: phone.e164,
+      phone_country_code: phone.country_code,
     });
-    document.querySelector('#research-step').classList.remove('active');
-    document.querySelector('#compliance-step').classList.add('active');
+    const result = await waitForRun(run.run_id);
     render(result);
     await loadTracker();
   } catch (error) {
@@ -307,3 +407,4 @@ form.addEventListener('submit', async event => {
 });
 
 loadTracker();
+loadPhoneCountries();

@@ -16,6 +16,8 @@ class LeadSubmission(BaseModel):
     # Optional in the stored schema for backward compatibility with earlier rows;
     # the current browser form requires it before submission.
     notification_email: EmailStr | None = None
+    phone_number: str | None = Field(default=None, max_length=40)
+    phone_country_code: str | None = Field(default=None, min_length=2, max_length=2)
 
 
 class FitBreakdown(BaseModel):
@@ -42,3 +44,7 @@ class LeadResult(BaseModel):
     compliance: ComplianceResult
     disposition: Literal["sales_ready", "manual_review", "blocked"]
     notification_status: Literal["sent", "failed", "skipped"]
+    phone_country: str | None = None
+    phone_country_risk: Literal["standard", "gray", "blocked"] | None = None
+    phone_risk_reason: str | None = None
+    decision_reasons: list[str] = Field(default_factory=list)

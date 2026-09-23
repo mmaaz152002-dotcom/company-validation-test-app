@@ -1,25 +1,8 @@
 import re
-from dataclasses import dataclass
 
 from app.models.compliance import ComplianceResult, ComplianceStatus
-
-
-@dataclass(frozen=True)
-class CompetitorRule:
-    name: str
-    aliases: tuple[str, ...] = ()
-    domains: tuple[str, ...] = ()
-
-
-KNOWN_COMPETITORS = (
-    CompetitorRule(
-        name="CloudTrim Inc",
-        aliases=("CloudTrim", "Cloud Trim"),
-        domains=("cloudtrim.ai", "cloudtrim.cloud"),
-    ),
-    CompetitorRule(name="SpendWise Cloud", aliases=("Spend Wise Cloud",)),
-    CompetitorRule(name="RightSize Cloud Co", aliases=("Right Size Cloud",)),
-)
+from app.services.phone_validation import PhoneAssessment
+from app.services.policy import CompetitorRule
 
 
 def normalize_company_name(value: str) -> str:
@@ -31,10 +14,26 @@ def normalize_company_name(value: str) -> str:
     return "".join(word for word in words if word not in suffixes)
 
 
-def basic_compliance_screen(company_name: str, domain: str) -> ComplianceResult | None:
+def basic_compliance_screen(
+    company_name: str,
+    domain: str,
+    competitors: tuple[CompetitorRule, ...],
+    phone: PhoneAssessment,
+) -> ComplianceResult | None:
+    if phone.risk == "blocked":
+        return ComplianceResult(
+            status=ComplianceStatus.BLOCK,
+            matched_rule=f"Blocked phone country: {phone.country_name} ({phone.country_code})",
+            confidence=1.0,
+            reason=(
+                f"Blocked during basic screening because the validated phone number belongs "
+                f"to {phone.country_name}. {phone.risk_reason} Website research and LLM "
+                "screening were skipped."
+            ),
+        )
     normalized_name = normalize_company_name(company_name)
     normalized_domain = domain.lower().removeprefix("www.").rstrip(".")
-    for competitor in KNOWN_COMPETITORS:
+    for competitor in competitors:
         known_names = (competitor.name, *competitor.aliases)
         name_match = normalized_name in {
             normalize_company_name(value) for value in known_names
@@ -58,4 +57,3 @@ def basic_compliance_screen(company_name: str, domain: str) -> ComplianceResult 
             ),
         )
     return None
-

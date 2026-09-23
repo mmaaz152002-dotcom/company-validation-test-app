@@ -1,6 +1,8 @@
 import logging
 import csv
 import io
+import asyncio
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -19,6 +21,12 @@ from app.services.research import CompanyResearchService
 from app.services.crawler import CrawlError
 from app.services.notifier import EmailNotifier
 from app.services.pipeline import LeadPipeline
+from app.services.phone_validation import (
+    PhoneValidationError,
+    assess_phone_number,
+    supported_calling_codes,
+)
+from app.services.policy import load_country_rules
 
 app = FastAPI(title="Maaz Sample Lead Validator")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -31,6 +39,7 @@ repository = LeadRepository(settings.database_path)
 pipeline = LeadPipeline(
     settings, repository, research_service, compliance_service, EmailNotifier(settings)
 )
+runs: dict[str, dict[str, object]] = {}
 
 
 @app.get("/", include_in_schema=False)
@@ -64,6 +73,10 @@ async def llm_error_handler(_: Request, exc: LLMServiceError) -> JSONResponse:
     logging.getLogger(__name__).error(
         "llm_service_unavailable", extra={"error_type": type(exc).__name__}
     )
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "The AI service is temporarily unavailable."},
+    )
 
 
 @app.exception_handler(CrawlError)
@@ -74,9 +87,90 @@ async def crawl_error_handler(_: Request, exc: CrawlError) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(exc)})
 
 
+@app.exception_handler(PhoneValidationError)
+async def phone_error_handler(_: Request, exc: PhoneValidationError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+class PhoneValidationRequest(BaseModel):
+    phone_number: str
+    country_code: str | None = None
+
+
+@app.get("/api/policy/countries")
+async def list_phone_countries() -> list[dict[str, str]]:
+    rules = load_country_rules(settings.country_rules_path)
+    return [
+        {
+            **option,
+            "risk": rules.get(option["country_code"]).risk
+            if option["country_code"] in rules else "standard",
+        }
+        for option in supported_calling_codes()
+    ]
+
+
+@app.post("/api/phone/validate")
+async def validate_phone(request: PhoneValidationRequest) -> dict[str, str]:
+    assessment = assess_phone_number(
+        request.phone_number,
+        request.country_code,
+        load_country_rules(settings.country_rules_path),
+    )
+    return assessment.__dict__
+
+
 @app.post("/api/leads", response_model=LeadResult)
 async def create_lead(lead: LeadSubmission) -> LeadResult:
     return await pipeline.process(lead)
+
+
+async def process_run(run_id: str, lead: LeadSubmission) -> None:
+    async def progress(stage: str, message: str) -> None:
+        runs[run_id].update({"stage": stage, "message": message})
+
+    try:
+        result = await pipeline.process(lead, progress)
+        runs[run_id].update(
+            {
+                "status": "completed",
+                "stage": "completed",
+                "message": "Lead validation completed.",
+                "result": result.model_dump(mode="json"),
+            }
+        )
+    except Exception as exc:
+        logging.getLogger(__name__).exception(
+            "lead_run_failed", extra={"run_id": run_id, "error_type": type(exc).__name__}
+        )
+        if isinstance(exc, (PhoneValidationError, CrawlError)):
+            message = str(exc)
+        elif isinstance(exc, LLMServiceError):
+            message = "The AI service is temporarily unavailable."
+        else:
+            message = "Lead validation could not be completed. Check the backend log."
+        runs[run_id].update(
+            {"status": "failed", "stage": "failed", "message": message}
+        )
+
+
+@app.post("/api/runs", status_code=202)
+async def create_run(lead: LeadSubmission) -> dict[str, str]:
+    run_id = uuid4().hex
+    runs[run_id] = {
+        "status": "running",
+        "stage": "queued",
+        "message": "Validation queued.",
+    }
+    asyncio.create_task(process_run(run_id, lead))
+    return {"run_id": run_id}
+
+
+@app.get("/api/runs/{run_id}")
+async def get_run(run_id: str) -> dict[str, object]:
+    if run_id not in runs:
+        raise HTTPException(status_code=404, detail="Validation run not found.")
+    return runs[run_id]
 
 
 @app.get("/api/leads", response_model=list[LeadResult])
@@ -133,17 +227,6 @@ async def export_leads_csv() -> StreamingResponse:
         iter([output.getvalue()]), media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=lead-tracker.csv"},
     )
-    return JSONResponse(
-        status_code=503,
-        content={
-            "detail": (
-                "Company research or compliance screening could not be completed "
-                "because the AI service is temporarily unavailable."
-            )
-        },
-    )
-
-
 @app.post("/api/research", response_model=CompanyProfile)
 async def research_company(request: ResearchRequest) -> CompanyProfile:
     return await research_service.research(request.domain, request.public_evidence)

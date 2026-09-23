@@ -14,6 +14,7 @@ RUN addgroup --system appgroup \
 
 COPY pyproject.toml README.md ./
 COPY app ./app
+COPY data/*.csv ./data/
 
 RUN python -m pip install --upgrade pip \
     && python -m pip install . \

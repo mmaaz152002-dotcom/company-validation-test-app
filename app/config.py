@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     sales_notification_email: str = ""
     log_level: str = "INFO"
     log_file: str = "logs/app.log"
+    competitor_rules_path: str = "data/competitors.csv"
+    country_rules_path: str = "data/country_rules.csv"
 
     @field_validator("openrouter_fallback_models", mode="before")
     @classmethod
